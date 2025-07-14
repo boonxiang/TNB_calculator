@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNB Electricity Bill Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #c7fbfd;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #0056b3;
+            text-align: center;
+        }
+        .input-section, .output-section {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="number"], select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .result-table th, .result-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        .result-table th {
+            background-color: #e2e2e2;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TNB Electricity Bill Calculator</h1>
+        <p>This tool helps you estimate your TNB electricity bill based on your usage, or find your usage based on your bill amount.</p>
+
+        <div class="input-section">
+            <label for="calculationType">Choose Calculation Type:</label>
+            <select id="calculationType" onchange="toggleSections()">
+                <option value="calculate_bill">Calculate Bill from Usage (kWh)</option>
+                <option value="estimate_usage">Estimate Usage from Bill (RM)</option>
+            </select>
+        </div>
+
+        <div id="calculateBillSection" class="input-section">
+            <h2>Calculate Bill from Usage</h2>
+            <label for="totalUsage">Total Usage (kWh):</label>
+            <input type="number" id="totalUsage" placeholder="e.g., 750">
+
+            <label for="peakPercent">Peak Usage Percentage (%):</label>
+            <input type="number" id="peakPercent" placeholder="e.g., 30" value="30">
+
+            <button onclick="calculateBill()">Calculate Bill</button>
+            <div id="calculateBillError" class="error"></div>
+        </div>
+
+        <div class="output-section hidden" id="billOutput">
+            <h2>Estimated Bill Details</h2>
+            <table class="result-table">
+                <tr><th>Description</th><th>Amount (RM)</th></tr>
+                <tr><td>Total Usage (kWh)</td><td id="outputTotalUsage"></td></tr>
+                <tr><td>Peak Usage (kWh)</td><td id="outputPeakUsageKWH"></td></tr>
+                <tr><td>Off-Peak Usage (kWh)</td><td id="outputOffPeakUsageKWH"></td></tr>
+                <tr><td>Peak Percentage (%)</td><td id="outputPeakPercent"></td></tr>
+                <tr><td>Off-Peak Percentage (%)</td><td id="outputOffPeakPercent"></td></tr>
+                <tr><td colspan="2"><hr></td></tr>
+                <tr><td>Energy (Peak)</td><td id="outputEnergyPeakTotal"></td></tr>
+                <tr><td>Energy (Off-Peak)</td><td id="outputEnergyOffPeakTotal"></td></tr>
+                <tr><td>Capacity Charge</td><td id="outputCapacityTotal"></td></tr>
+                <tr><td>Network Charge</td><td id="outputNetworkTotal"></td></tr>
+                <tr><td>Retail Charge</td><td id="outputRetailTotal"></td></tr>
+                <tr><td>EEI Rebate</td><td id="outputEEIRebate"></td></tr>
+                <tr><td><strong>Subtotal Before Tax</strong></td><td id="outputSubtotalBeforeTax"></td></tr>
+                <tr><td>Service Tax (8%)</td><td id="outputServiceTax"></td></tr>
+                <tr><td>KWTBB (1.6%)</td><td id="outputKWTBB"></td></tr>
+                <tr><td><strong>Total Bill</strong></td><td id="outputTotalBill"></td></tr>
+            </table>
+        </div>
+
+        <div id="estimateUsageSection" class="input-section hidden">
+            <h2>Estimate Usage from Bill</h2>
+            <label for="targetBill">Target Total Bill (RM):</label>
+            <input type="number" id="targetBill" placeholder="e.g., 250">
+
+            <label for="peakPercentReverse">Peak Usage Percentage (%) for reverse calculation:</label>
+            <input type="number" id="peakPercentReverse" placeholder="e.g., 30" value="30">
+
+            <button onclick="estimateUsage()">Estimate Usage</button>
+            <div id="estimateUsageError" class="error"></div>
+        </div>
+
+        <div class="output-section hidden" id="usageOutput">
+            <h2>Estimated Usage Details</h2>
+            <table class="result-table">
+                <tr><th>Description</th><th>Amount</th></tr>
+                <tr><td>Estimated Total Usage (kWh)</td><td id="outputEstimatedTotalKWH"></td></tr>
+                <tr><td>Estimated Peak Usage (kWh)</td><td id="outputEstimatedPeakKWH"></td></tr>
+                <tr><td>Estimated Off-Peak Usage (kWh)</td><td id="outputEstimatedOffPeakKWH"></td></tr>
+                <tr><td>Peak Percentage (%)</td><td id="outputReversePeakPercent"></td></tr>
+                <tr><td>Off-Peak Percentage (%)</td><td id="outputReverseOffPeakPercent"></td></tr>
+                <tr><td>Matched Total Bill (RM)</td><td id="outputMatchedTotalBill"></td></tr>
+                <tr><td colspan="2"><hr></td></tr>
+                <tr><td>Service Tax (RM)</td><td id="outputReverseServiceTax"></td></tr>
+                <tr><td>KWTBB (RM)</td><td id="outputReverseKWTBB"></td></tr>
+                <tr><td>Retail Charge (RM)</td><td id="outputReverseRetailCharge"></td></tr>
+                <tr><td>Network Charge (RM)</td><td id="outputReverseNetworkCharge"></td></tr>
+                <tr><td>Capacity Charge (RM)</td><td id="outputReverseCapacityCharge"></td></tr>
+                <tr><td>Energy (Peak) (RM)</td><td id="outputReverseEnergyPeakTotal"></td></tr>
+                <tr><td>Energy (Off-Peak) (RM)</td><td id="outputReverseEnergyOffPeakTotal"></td></tr>
+                <tr><td>EEI Rebate (RM)</td><td id="outputReverseEEIRebate"></td></tr>
+                <tr><td>Subtotal Before Tax (RM)</td><td id="outputReverseSubtotalBeforeTax"></td></tr>
+            </table>
+            <p id="outputReverseStatus"></p>
+        </div>
+    </div>
+
+    <script>
+        const TNB_RATES = {
+            'low': {  // ≤1500 kWh
+                'peak': 0.2852,
+                'off_peak': 0.2443,
+                'capacity': 0.0455,
+                'network': 0.1285,
+                'retail': 10.00
+            },
+            'high': {  // >1500 kWh
+                'peak': 0.3852,
+                'off_peak': 0.3443,
+                'capacity': 0.0455,
+                'network': 0.1285,
+                'retail': 10.00
+            }
+        };
+
+        const EEI_RATES = [
+            {'min': 1, 'max': 200, 'rate': 0.25},
+            {'min': 201, 'max': 250, 'rate': 0.245},
+            {'min': 251, 'max': 300, 'rate': 0.225},
+            {'min': 301, 'max': 350, 'rate': 0.21},
+            {'min': 351, 'max': 400, 'rate': 0.17},
+            {'min': 401, 'max': 450, 'rate': 0.145},
+            {'min': 451, 'max': 500, 'rate': 0.12},
+            {'min': 501, 'max': 550, 'rate': 0.105},
+            {'min': 551, 'max': 600, 'rate': 0.09},
+            {'min': 601, 'max': 650, 'rate': 0.075},
+            {'min': 651, 'max': 700, 'rate': 0.055},
+            {'min': 701, 'max': 750, 'rate': 0.045},
+            {'min': 751, 'max': 800, 'rate': 0.04},
+            {'min': 801, 'max': 850, 'rate': 0.025},
+            {'min': 851, 'max': 900, 'rate': 0.01},
+            {'min': 901, 'max': 1000, 'rate': 0.005}
+        ];
+
+        function calculate_eei(total_kwh) {
+            if (total_kwh > 1000) {
+                return 0.0;
+            }
+
+            const slabs = [
+                [1, 200, 25.0],
+                [201, 250, 24.5],
+                [251, 300, 22.5],
+                [301, 350, 21.0],
+                [351, 400, 17.0],
+                [401, 450, 14.5],
+                [451, 500, 12.0],
+                [501, 550, 10.5],
+                [551, 600, 9.0],
+                [601, 650, 7.5],
+                [651, 700, 5.5],
+                [701, 750, 4.5],
+                [751, 800, 4.0],
+                [801, 850, 2.5],
+                [851, 900, 1.0],
+                [901, 1000, 0.5],
+            ];
+
+            for (let i = 0; i < slabs.length; i++) {
+                const [lower, upper, rate_sen] = slabs[i];
+                if (lower <= total_kwh && total_kwh <= upper) {
+                    const rebate_rm = total_kwh * (rate_sen / 100);
+                    return parseFloat(rebate_rm.toFixed(2));
+                }
+            }
+            return 0.0;
+        }
+
+        function calculate_bill_from_usage(total_usage, peak_percent) {
+            const peak_usage = total_usage * (peak_percent / 100);
+            const off_peak_usage = total_usage - peak_usage;
+
+            const rates = total_usage <= 1500 ? TNB_RATES['low'] : TNB_RATES['high'];
+
+            let non_taxable_kwh_limit = 600;
+
+            let non_taxable_peak = Math.min(peak_usage, non_taxable_kwh_limit);
+            let remaining_nt_limit = non_taxable_kwh_limit - non_taxable_peak;
+            let non_taxable_off_peak = Math.min(off_peak_usage, remaining_nt_limit);
+            
+            let taxable_peak = peak_usage - non_taxable_peak;
+            let taxable_off_peak = off_peak_usage - non_taxable_off_peak;
+
+            let non_taxable_kwh = non_taxable_peak + non_taxable_off_peak;
+            let taxable_kwh = taxable_peak + taxable_off_peak;
+
+            const eei_rebate = calculate_eei(total_usage);
+            
+            let eei_rebate_non_tax = 0.0;
+            let eei_rebate_tax = 0.0;
+
+            if (eei_rebate > 0 && total_usage > 0) {
+                eei_rebate_non_tax = eei_rebate * (non_taxable_kwh / total_usage);
+                eei_rebate_tax = eei_rebate * (taxable_kwh / total_usage);
+            }
+
+            // Charges - non-taxable part (<= 600kWh)
+            const nt_energy_peak = non_taxable_peak * rates['peak'];
+            const nt_energy_off_peak = non_taxable_off_peak * rates['off_peak'];
+            const nt_capacity = non_taxable_kwh * rates['capacity'];
+            const nt_network = non_taxable_kwh * rates['network'];
+            const nt_retail = 0; // Retail waived if total <= 600
+
+            const nt_subtotal = nt_energy_peak + nt_energy_off_peak + nt_capacity + nt_network + nt_retail - eei_rebate_non_tax;
+
+            // Charges - taxable part (> 600kWh)
+            const t_energy_peak = taxable_peak * rates['peak'];
+            const t_energy_off_peak = taxable_off_peak * rates['off_peak'];
+            const t_capacity = taxable_kwh * rates['capacity'];
+            const t_network = taxable_kwh * rates['network'];
+            const t_retail = total_usage > 600 ? rates['retail'] : 0;
+            const t_subtotal = t_energy_peak + t_energy_off_peak + t_capacity + t_network + t_retail - eei_rebate_tax;
+
+            const combined_subtotal = nt_subtotal + t_subtotal;
+
+            const tax_base = t_subtotal;
+            const service_tax = tax_base * 0.08;
+
+            let kwtbb = 0.0;
+            if (total_usage > 300) {
+                const retail_for_kwtbb = total_usage > 600 ? t_retail : 0;
+                kwtbb = (combined_subtotal - retail_for_kwtbb) * 0.016;
+            }
+
+            const total_bill = combined_subtotal + service_tax + kwtbb;
+
+            return {
+                'total_usage': parseFloat(total_usage.toFixed(2)),
+                'peak_percent': parseFloat(peak_percent.toFixed(2)),
+                'peak_usage_kwh': parseFloat(peak_usage.toFixed(2)),
+                'off_peak_usage_kwh': parseFloat(off_peak_usage.toFixed(2)),
+                'non_taxable_kwh': parseFloat(non_taxable_kwh.toFixed(2)),
+                'taxable_kwh': parseFloat(taxable_kwh.toFixed(2)),
+                'non_taxable_subtotal': parseFloat(nt_subtotal.toFixed(2)),
+                'taxable_subtotal': parseFloat(t_subtotal.toFixed(2)),
+                'energy_peak_total': parseFloat((nt_energy_peak + t_energy_peak).toFixed(2)),
+                'energy_off_peak_total': parseFloat((nt_energy_off_peak + t_energy_off_peak).toFixed(2)),
+                'capacity_total': parseFloat((nt_capacity + t_capacity).toFixed(2)),
+                'network_total': parseFloat((nt_network + t_network).toFixed(2)),
+                'retail_total': parseFloat(t_retail.toFixed(2)),
+                'eei_rebate': parseFloat(eei_rebate.toFixed(2)),
+                'subtotal_before_tax': parseFloat(combined_subtotal.toFixed(2)),
+                'service_tax': parseFloat(service_tax.toFixed(2)),
+                'kwtbb': parseFloat(kwtbb.toFixed(2)),
+                'total_bill': parseFloat(total_bill.toFixed(2))
+            };
+        }
+
+        function reverse_tnb_tou_bill(total_bill_input, peak_percent, tolerance = 0.01, max_kwh = 5000) {
+            let low = 1.0;
+            let high = max_kwh * 1.0;
+            let guess = (low + high) / 2;
+
+            let iterations = 0;
+            const max_iterations = 100;
+
+            let best_guess = null;
+            let min_diff = Infinity;
+
+            while (iterations < max_iterations) {
+                const result = calculate_bill_from_usage(guess, peak_percent);
+                const calculated_bill = result['total_bill'];
+                const difference = calculated_bill - total_bill_input;
+
+                if (Math.abs(difference) < min_diff) {
+                    min_diff = Math.abs(difference);
+                    best_guess = [guess, result];
+                }
+
+                if (Math.abs(difference) <= tolerance) {
+                    return {
+                        'estimated_total_kwh': parseFloat(guess.toFixed(2)),
+                        'estimated_peak_kwh': parseFloat(result['peak_usage_kwh'].toFixed(2)),
+                        'estimated_off_peak_kwh': parseFloat(result['off_peak_usage_kwh'].toFixed(2)),
+                        'peak_percent': parseFloat(peak_percent.toFixed(2)),
+                        'off_peak_percent': parseFloat((100 - peak_percent).toFixed(2)),
+                        'matched_total_bill': parseFloat(calculated_bill.toFixed(2)),
+                        'service_tax': result['service_tax'],
+                        'kwtbb': result['kwtbb'],
+                        'retail_charge': result['retail_total'],
+                        'network_charge': result['network_total'],
+                        'capacity_charge': result['capacity_total'],
+                        'energy_peak_total': result['energy_peak_total'],
+                        'energy_off_peak_total': result['energy_off_peak_total'],
+                        'eei_rebate': result['eei_rebate'],
+                        'subtotal_before_tax': result['subtotal_before_tax'],
+                        'iterations': iterations,
+                        'status': 'matched_within_tolerance'
+                    };
+                }
+
+                if (calculated_bill < total_bill_input) {
+                    low = guess;
+                } else {
+                    high = guess;
+                }
+
+                guess = (low + high) / 2;
+                iterations += 1;
+            }
+
+            // Fine-tune scan ±2 kWh
+            for (let i = -20; i <= 20; i++) {
+                const adj = i / 10.0;
+                const refined_kwh = best_guess[0] + adj;
+                if (refined_kwh < 0) {
+                    continue;
+                }
+                const result = calculate_bill_from_usage(refined_kwh, peak_percent);
+                const calculated_bill = result['total_bill'];
+                const diff = Math.abs(calculated_bill - total_bill_input);
+                if (diff <= tolerance) {
+                    return {
+                        'estimated_total_kwh': parseFloat(refined_kwh.toFixed(2)),
+                        'estimated_peak_kwh': parseFloat(result['peak_usage_kwh'].toFixed(2)),
+                        'estimated_off_peak_kwh': parseFloat(result['off_peak_usage_kwh'].toFixed(2)),
+                        'peak_percent': parseFloat(peak_percent.toFixed(2)),
+                        'off_peak_percent': parseFloat((100 - peak_percent).toFixed(2)),
+                        'matched_total_bill': parseFloat(calculated_bill.toFixed(2)),
+                        'service_tax': result['service_tax'],
+                        'kwtbb': result['kwtbb'],
+                        'retail_charge': result['retail_total'],
+                        'network_charge': result['network_total'],
+                        'capacity_charge': result['capacity_total'],
+                        'energy_peak_total': result['energy_peak_total'],
+                        'energy_off_peak_total': result['energy_off_peak_total'],
+                        'eei_rebate': result['eei_rebate'],
+                        'subtotal_before_tax': result['subtotal_before_tax'],
+                        'iterations': iterations,
+                        'status': 'matched_in_fine_scan'
+                    };
+                }
+            }
+
+            // Final fallback: return best guess even if not matched
+            const best_kwh = parseFloat(best_guess[0].toFixed(2));
+            const best_result = best_guess[1];
+            const best_peak_kwh = parseFloat((best_kwh * (peak_percent / 100)).toFixed(2));
+            const best_off_peak_kwh = parseFloat((best_kwh - best_peak_kwh).toFixed(2));
+
+            return {
+                'error': 'No exact match found within tolerance, returning best estimate.',
+                'best_guess_kwh': best_kwh,
+                'estimated_peak_kwh': best_peak_kwh,
+                'estimated_off_peak_kwh': best_off_peak_kwh,
+                'peak_percent': parseFloat(peak_percent.toFixed(2)),
+                'off_peak_percent': parseFloat((100 - peak_percent).toFixed(2)),
+                'best_matched_bill': parseFloat(best_result['total_bill'].toFixed(2)),
+                'service_tax': best_result['service_tax'],
+                'kwtbb': best_result['kwtbb'],
+                'retail_charge': best_result['retail_total'],
+                'network_charge': best_result['network_total'],
+                'capacity_charge': best_result['capacity_total'],
+                'energy_peak_total': best_result['energy_peak_total'],
+                'energy_off_peak_total': best_result['energy_off_peak_total'],
+                'eei_rebate': best_result['eei_rebate'],
+                'subtotal_before_tax': best_result['subtotal_before_tax'],
+                'difference': parseFloat(Math.abs(best_result['total_bill'] - total_bill_input).toFixed(2)),
+                'iterations': iterations,
+                'status': 'best_estimate_only'
+            };
+        }
+
+        function calculateBill() {
+            const totalUsage = parseFloat(document.getElementById('totalUsage').value);
+            const peakPercent = parseFloat(document.getElementById('peakPercent').value);
+            const errorDiv = document.getElementById('calculateBillError');
+            const outputDiv = document.getElementById('billOutput');
+
+            errorDiv.textContent = '';
+            outputDiv.classList.add('hidden'); // Hide output by default
+
+            if (isNaN(totalUsage) || totalUsage < 0) {
+                errorDiv.textContent = 'Please enter a valid positive number for Total Usage.';
+                return;
+            }
+            if (isNaN(peakPercent) || peakPercent < 0 || peakPercent > 100) {
+                errorDiv.textContent = 'Please enter a valid percentage (0-100) for Peak Usage Percentage.';
+                return;
+            }
+
+            const result = calculate_bill_from_usage(totalUsage, peakPercent);
+
+            document.getElementById('outputTotalUsage').textContent = result.total_usage.toFixed(2) + ' kWh';
+            document.getElementById('outputPeakUsageKWH').textContent = result.peak_usage_kwh.toFixed(2) + ' kWh';
+            document.getElementById('outputOffPeakUsageKWH').textContent = result.off_peak_usage_kwh.toFixed(2) + ' kWh';
+            document.getElementById('outputPeakPercent').textContent = result.peak_percent.toFixed(2) + '%';
+            document.getElementById('outputOffPeakPercent').textContent = (100 - result.peak_percent).toFixed(2) + '%';
+            document.getElementById('outputEnergyPeakTotal').textContent = 'RM ' + result.energy_peak_total.toFixed(2);
+            document.getElementById('outputEnergyOffPeakTotal').textContent = 'RM ' + result.energy_off_peak_total.toFixed(2);
+            document.getElementById('outputCapacityTotal').textContent = 'RM ' + result.capacity_total.toFixed(2);
+            document.getElementById('outputNetworkTotal').textContent = 'RM ' + result.network_total.toFixed(2);
+            document.getElementById('outputRetailTotal').textContent = 'RM ' + result.retail_total.toFixed(2);
+            document.getElementById('outputEEIRebate').textContent = '- RM ' + result.eei_rebate.toFixed(2);
+            document.getElementById('outputSubtotalBeforeTax').textContent = 'RM ' + result.subtotal_before_tax.toFixed(2);
+            document.getElementById('outputServiceTax').textContent = 'RM ' + result.service_tax.toFixed(2);
+            document.getElementById('outputKWTBB').textContent = 'RM ' + result.kwtbb.toFixed(2);
+            document.getElementById('outputTotalBill').textContent = 'RM ' + result.total_bill.toFixed(2);
+
+            outputDiv.classList.remove('hidden'); // Show output
+        }
+
+        function estimateUsage() {
+            const targetBill = parseFloat(document.getElementById('targetBill').value);
+            const peakPercentReverse = parseFloat(document.getElementById('peakPercentReverse').value);
+            const errorDiv = document.getElementById('estimateUsageError');
+            const outputDiv = document.getElementById('usageOutput');
+
+            errorDiv.textContent = '';
+            outputDiv.classList.add('hidden'); // Hide output by default
+
+            if (isNaN(targetBill) || targetBill < 0) {
+                errorDiv.textContent = 'Please enter a valid positive number for Target Total Bill.';
+                return;
+            }
+            if (isNaN(peakPercentReverse) || peakPercentReverse < 0 || peakPercentReverse > 100) {
+                errorDiv.textContent = 'Please enter a valid percentage (0-100) for Peak Usage Percentage.';
+                return;
+            }
+
+            const result = reverse_tnb_tou_bill(targetBill, peakPercentReverse);
+
+            if (result.error) {
+                errorDiv.textContent = result.error + ' The closest estimate is shown.';
+                document.getElementById('outputEstimatedTotalKWH').textContent = result.best_guess_kwh.toFixed(2) + ' kWh';
+                document.getElementById('outputEstimatedPeakKWH').textContent = result.estimated_peak_kwh.toFixed(2) + ' kWh';
+                document.getElementById('outputEstimatedOffPeakKWH').textContent = result.estimated_off_peak_kwh.toFixed(2) + ' kWh';
+                document.getElementById('outputReversePeakPercent').textContent = result.peak_percent.toFixed(2) + '%';
+                document.getElementById('outputReverseOffPeakPercent').textContent = result.off_peak_percent.toFixed(2) + '%';
+                document.getElementById('outputMatchedTotalBill').textContent = 'RM ' + result.best_matched_bill.toFixed(2) + ' (Difference: RM ' + result.difference.toFixed(2) + ')';
+            } else {
+                document.getElementById('outputEstimatedTotalKWH').textContent = result.estimated_total_kwh.toFixed(2) + ' kWh';
+                document.getElementById('outputEstimatedPeakKWH').textContent = result.estimated_peak_kwh.toFixed(2) + ' kWh';
+                document.getElementById('outputEstimatedOffPeakKWH').textContent = result.estimated_off_peak_kwh.toFixed(2) + ' kWh';
+                document.getElementById('outputReversePeakPercent').textContent = result.peak_percent.toFixed(2) + '%';
+                document.getElementById('outputReverseOffPeakPercent').textContent = result.off_peak_percent.toFixed(2) + '%';
+                document.getElementById('outputMatchedTotalBill').textContent = 'RM ' + result.matched_total_bill.toFixed(2);
+            }
+            
+            document.getElementById('outputReverseServiceTax').textContent = 'RM ' + result.service_tax.toFixed(2);
+            document.getElementById('outputReverseKWTBB').textContent = 'RM ' + result.kwtbb.toFixed(2);
+            document.getElementById('outputReverseRetailCharge').textContent = 'RM ' + result.retail_charge.toFixed(2);
+            document.getElementById('outputReverseNetworkCharge').textContent = 'RM ' + result.network_charge.toFixed(2);
+            document.getElementById('outputReverseCapacityCharge').textContent = 'RM ' + result.capacity_charge.toFixed(2);
+            document.getElementById('outputReverseEnergyPeakTotal').textContent = 'RM ' + result.energy_peak_total.toFixed(2);
+            document.getElementById('outputReverseEnergyOffPeakTotal').textContent = 'RM ' + result.energy_off_peak_total.toFixed(2);
+            document.getElementById('outputReverseEEIRebate').textContent = '- RM ' + result.eei_rebate.toFixed(2);
+            document.getElementById('outputReverseSubtotalBeforeTax').textContent = 'RM ' + result.subtotal_before_tax.toFixed(2);
+            document.getElementById('outputReverseStatus').textContent = 'Status: ' + (result.status ? result.status.replace(/_/g, ' ') : 'N/A') + ' (Iterations: ' + result.iterations + ')';
+
+
+            outputDiv.classList.remove('hidden'); // Show output
+        }
+
+        // Function to toggle sections based on select list
+        function toggleSections() {
+            const calculationType = document.getElementById('calculationType').value;
+            const calculateBillSection = document.getElementById('calculateBillSection');
+            const estimateUsageSection = document.getElementById('estimateUsageSection');
+            const billOutput = document.getElementById('billOutput');
+            const usageOutput = document.getElementById('usageOutput');
+            const calculateBillError = document.getElementById('calculateBillError');
+            const estimateUsageError = document.getElementById('estimateUsageError');
+
+            if (calculationType === 'calculate_bill') {
+                calculateBillSection.classList.remove('hidden');
+                estimateUsageSection.classList.add('hidden');
+                billOutput.classList.add('hidden'); // Hide previous results
+                usageOutput.classList.add('hidden'); // Hide previous results
+                calculateBillError.textContent = ''; // Clear errors
+                estimateUsageError.textContent = ''; // Clear errors
+            } else {
+                calculateBillSection.classList.add('hidden');
+                estimateUsageSection.classList.remove('hidden');
+                billOutput.classList.add('hidden'); // Hide previous results
+                usageOutput.classList.add('hidden'); // Hide previous results
+                calculateBillError.textContent = ''; // Clear errors
+                estimateUsageError.textContent = ''; // Clear errors
+            }
+        }
+
+        // Initialize the view when the page loads
+        document.addEventListener('DOMContentLoaded', toggleSections);
+
+    </script>
+</body>
+</html>
