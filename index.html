@@ -364,7 +364,7 @@
             };
         }
 
-        function reverse_tnb_tou_bill(total_bill_input, peak_percent, tolerance = 0.01, max_kwh = 5000) {
+        function reverse_tnb_tou_bill(total_bill_input, peak_percent, tolerance = 0.01, max_kwh = 1000000000000) {
             let low = 1.0;
             let high = max_kwh * 1.0;
             let guess = (low + high) / 2;
@@ -632,7 +632,7 @@
         }
 
         function reverse_tnb_bill_general(targetBill) {
-            let low = 1, high = 5000, mid;
+            let low = 1, high = 1000000000000, mid;
             let bestDiff = Infinity;
             let bestResult = null;
             let iterations = 0;
