@@ -4,7 +4,7 @@ import TNB_Domestric as tnb_domestic
 import pandas as pd # Import pandas
 import base64
 
-st.set_page_config(layout="wided")
+st.set_page_config(layout="wide")
 
 # --- Custom CSS for DataFrame Output ---
 st.markdown(
