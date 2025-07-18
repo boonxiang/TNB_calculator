@@ -13,3 +13,7 @@ In this Project has focus on providing four function as below which is :
   
   4.Estimate usage from TNB BILL price for domestic TOU tariff
 
+
+Can visit also :
+https://tnbcalculator-bxyouqzan0.streamlit.app/
+
