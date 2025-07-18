@@ -4,7 +4,7 @@ import TNB_Domestric as tnb_domestic
 import pandas as pd # Import pandas
 import base64
 
-st.set_page_config(layout="centered")
+st.set_page_config(layout="wided")
 
 # --- Custom CSS for DataFrame Output ---
 st.markdown(
@@ -24,7 +24,25 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+def add_bg_from_local(image_file):
+    with open(image_file, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode()
+    
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{encoded_string}");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
+add_bg_from_local("backgroud_picture.png") 
 
 st.title("TNB Electricity Bill Calculator and Reverser")
 
