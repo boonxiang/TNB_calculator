@@ -168,7 +168,7 @@ elif tariff_type == "Domestic":
         with st.container(border=True): # New container for inputs
             st.markdown("### Input Details")
             total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
-            afa_input = st.number_input("Enter AFA :",min_value=-999999.0,max_value=999999.0,step=0.01)
+            afa_input = st.number_input("Enter AFA :",step=0.0001)
 
 
 
@@ -198,7 +198,7 @@ elif tariff_type == "Domestic":
         with st.container(border=True): # New container for inputs
             st.markdown("### Input Details")
             total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
-            afa_input = st.number_input("Enter AFA :",min_value=-999999.0,max_value=999999.0,step=0.01)
+            afa_input = st.number_input("Enter AFA :",step=0.0001)
 
 
 
@@ -228,4 +228,5 @@ elif tariff_type == "Domestic":
                     df_result = pd.DataFrame(result.items(), columns=['Metric', 'Value'])
                     df_result['Value'] = df_result['Value'].apply(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
                     st.dataframe(df_result, hide_index=True, use_container_width=True)
+
 
