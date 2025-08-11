@@ -168,6 +168,9 @@ elif tariff_type == "Domestic":
         with st.container(border=True): # New container for inputs
             st.markdown("### Input Details")
             total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
+            afa_input = st.number_input("Enter AFA :",min_value=-999999.0,max_value=999999.0,step=0.01)
+
+
 
             if tariff_category == 'TOU':
                 peak_percent = st.slider("Peak Usage Percentage (%) :", 0, 100, 25)
@@ -178,9 +181,9 @@ elif tariff_type == "Domestic":
             result = {}
             if total_usage is not None:
                 if tariff_category == 'general':
-                    result = tnb_domestic.calculate_bill_from_usage_general(total_usage)
+                    result = tnb_domestic.calculate_bill_from_usage_general(total_usage,afa_input)
                 elif tariff_category == 'TOU':
-                    result = tnb_domestic.calculate_bill_from_usage(total_usage, peak_percent)
+                    result = tnb_domestic.calculate_bill_from_usage(total_usage, peak_percent,afa_input)
             else:
                 st.warning("Please enter a total usage.")
 
@@ -195,6 +198,9 @@ elif tariff_type == "Domestic":
         with st.container(border=True): # New container for inputs
             st.markdown("### Input Details")
             total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
+            afa_input = st.number_input("Enter AFA :",min_value=-999999.0,max_value=999999.0,step=0.01)
+
+
 
             if tariff_category == 'TOU':
                 peak_percent = st.slider("Assumed Peak Usage Percentage (%):", 0, 100, 25)
@@ -205,9 +211,9 @@ elif tariff_type == "Domestic":
             result = {}
             if total_bill_input is not None:
                 if tariff_category == 'general':
-                    result = tnb_domestic.reverse_tnb_general_bill(total_bill_input)
+                    result = tnb_domestic.reverse_tnb_general_bill(total_bill_input,afa_input)
                 elif tariff_category == 'TOU':
-                    result = tnb_domestic.reverse_tnb_tou_bill(total_bill_input, peak_percent)
+                    result = tnb_domestic.reverse_tnb_tou_bill(total_bill_input, peak_percent,afa_input)
             else:
                 st.warning("Please enter the total bill amount.")
 
@@ -222,3 +228,4 @@ elif tariff_type == "Domestic":
                     df_result = pd.DataFrame(result.items(), columns=['Metric', 'Value'])
                     df_result['Value'] = df_result['Value'].apply(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
                     st.dataframe(df_result, hide_index=True, use_container_width=True)
+
