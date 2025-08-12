@@ -51,22 +51,22 @@ if tariff_type == "Non-Domestic":
             st.markdown("### Input Details") # Subheader for inputs
             if tariff_category == 'low_General':
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
                 
             elif tariff_category == 'low_TOU':
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
                 peak_percent = st.slider("Peak Usage Percentage (%) :", 0, 100, 50)
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
                 
             elif tariff_category in ['medium_General', 'high_General']:
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             elif tariff_category in ['medium_TOU', 'high_TOU']:
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
                 peak_percent = st.slider("Peak Usage Percentage (%) :", 0, 100, 50)
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             
             calculate_button = st.button("Calculate Bill")
 
@@ -111,20 +111,20 @@ if tariff_type == "Non-Domestic":
             st.markdown("### Input Details")
             if tariff_category == 'low_General':
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             elif tariff_category == 'low_TOU':
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
                 peak_percent = st.slider("Assumed Peak Usage Percentage (%):", 0, 100, 50)
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             elif tariff_category in ['medium_General', 'high_General']:
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             elif tariff_category in ['medium_TOU', 'high_TOU']:
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
                 peak_percent = st.slider("Assumed Peak Usage Percentage (%):", 0, 100, 50)
-                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             
             estimate_button = st.button("Estimate Usage")
 
@@ -178,12 +178,11 @@ elif tariff_type == "Domestic":
         with st.container(border=True): # New container for inputs
             st.markdown("### Input Details")
             total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
-            afa_input = st.number_input("Enter AFA :",step=0.0001)
-
-
-
+            
             if tariff_category == 'TOU':
                 peak_percent = st.slider("Peak Usage Percentage (%) :", 0, 100, 25)
+            
+            afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             
             calculate_button = st.button("Calculate Bill")
 
@@ -208,12 +207,11 @@ elif tariff_type == "Domestic":
         with st.container(border=True): # New container for inputs
             st.markdown("### Input Details")
             total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
-            afa_input = st.number_input("Enter AFA :",step=0.0001)
-
-
 
             if tariff_category == 'TOU':
                 peak_percent = st.slider("Assumed Peak Usage Percentage (%):", 0, 100, 25)
+            
+            afa_input = st.number_input( "Enter AFA :", min_value=-0.9999, step=0.0001, format="%.4f", placeholder="Eg: -0.0145" )
             
             estimate_button = st.button("Estimate Usage")
 
@@ -238,6 +236,7 @@ elif tariff_type == "Domestic":
                     df_result = pd.DataFrame(result.items(), columns=['Metric', 'Value'])
                     df_result['Value'] = df_result['Value'].apply(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
                     st.dataframe(df_result, hide_index=True, use_container_width=True)
+
 
 
 
