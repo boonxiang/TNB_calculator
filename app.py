@@ -51,16 +51,22 @@ if tariff_type == "Non-Domestic":
             st.markdown("### Input Details") # Subheader for inputs
             if tariff_category == 'low_General':
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                
             elif tariff_category == 'low_TOU':
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
                 peak_percent = st.slider("Peak Usage Percentage (%) :", 0, 100, 50)
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
+                
             elif tariff_category in ['medium_General', 'high_General']:
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
             elif tariff_category in ['medium_TOU', 'high_TOU']:
                 total_usage = st.number_input("Enter Total Usage (kWh):", min_value=1)
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
                 peak_percent = st.slider("Peak Usage Percentage (%) :", 0, 100, 50)
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
             
             calculate_button = st.button("Calculate Bill")
 
@@ -68,27 +74,27 @@ if tariff_type == "Non-Domestic":
             result = {}
             if tariff_category == 'low_General':
                 if total_usage is not None:
-                    result = tnb_non_domestic.calculate_bill_from_usage_nd_low_general(total_usage)
+                    result = tnb_non_domestic.calculate_bill_from_usage_nd_low_general(total_usage,afa_input)
                 else: st.warning("Please enter a total usage.")
             elif tariff_category == 'low_TOU':
                 if total_usage is not None:
-                    result = tnb_non_domestic.calculate_bill_from_usage_nd_TOU(total_usage, peak_percent)
+                    result = tnb_non_domestic.calculate_bill_from_usage_nd_TOU(total_usage, peak_percent,afa_input)
                 else: st.warning("Please enter a total usage.")
             elif tariff_category == 'medium_General':
                 if total_usage is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.calculate_bill_from_usage_nd_medium_general(total_usage, maximum_demand)
+                    result = tnb_non_domestic.calculate_bill_from_usage_nd_medium_general(total_usage, maximum_demand,afa_input)
                 else: st.warning("Please enter total usage and maximum demand.")
             elif tariff_category == 'medium_TOU':
                 if total_usage is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.calculate_bill_from_usage_nd_medium_TOU(total_usage, maximum_demand, peak_percent)
+                    result = tnb_non_domestic.calculate_bill_from_usage_nd_medium_TOU(total_usage, maximum_demand, peak_percent,afa_input)
                 else: st.warning("Please enter total usage, maximum demand, and peak percentage.")
             elif tariff_category == 'high_General':
                 if total_usage is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.calculate_bill_from_usage_nd_high_general(total_usage, maximum_demand)
+                    result = tnb_non_domestic.calculate_bill_from_usage_nd_high_general(total_usage, maximum_demand,afa_input)
                 else: st.warning("Please enter total usage and maximum demand.")
             elif tariff_category == 'high_TOU':
                 if total_usage is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.calculate_bill_from_usage_nd_high_TOU(total_usage, maximum_demand, peak_percent)
+                    result = tnb_non_domestic.calculate_bill_from_usage_nd_high_TOU(total_usage, maximum_demand, peak_percent,afa_input)
                 else: st.warning("Please enter total usage, maximum demand, and peak percentage.")
 
             if result:
@@ -105,16 +111,20 @@ if tariff_type == "Non-Domestic":
             st.markdown("### Input Details")
             if tariff_category == 'low_General':
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
             elif tariff_category == 'low_TOU':
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
                 peak_percent = st.slider("Assumed Peak Usage Percentage (%):", 0, 100, 50)
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
             elif tariff_category in ['medium_General', 'high_General']:
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
             elif tariff_category in ['medium_TOU', 'high_TOU']:
                 total_bill_input = st.number_input("Enter Total Bill (RM):", min_value=0.0, format="%.2f")
                 maximum_demand = st.number_input("Enter Maximum Demand (kW):", min_value=0.0, format="%.2f")
                 peak_percent = st.slider("Assumed Peak Usage Percentage (%):", 0, 100, 50)
+                afa_input = st.number_input("Enter AFA :",min_value=-0.9999,placeholder= "Eg: -0.0145")
             
             estimate_button = st.button("Estimate Usage")
 
@@ -122,27 +132,27 @@ if tariff_type == "Non-Domestic":
             result = {}
             if tariff_category == 'low_General':
                 if total_bill_input is not None:
-                    result = tnb_non_domestic.reverse_tnb_nd_general_bill(total_bill_input)
+                    result = tnb_non_domestic.reverse_tnb_nd_general_bill(total_bill_input,afa_input)
                 else: st.warning("Please enter the total bill amount.")
             elif tariff_category == 'low_TOU':
                 if total_bill_input is not None:
-                    result = tnb_non_domestic.reverse_tnb_nd_tou_bill(total_bill_input, peak_percent)
+                    result = tnb_non_domestic.reverse_tnb_nd_tou_bill(total_bill_input, peak_percent,afa_input)
                 else: st.warning("Please enter the total bill amount and assumed peak percentage.")
             elif tariff_category == 'medium_General':
                 if total_bill_input is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.reverse_tnb_nd_medium_general_bill(total_bill_input, maximum_demand)
+                    result = tnb_non_domestic.reverse_tnb_nd_medium_general_bill(total_bill_input, maximum_demand,afa_input)
                 else: st.warning("Please enter the total bill amount and maximum demand.")
             elif tariff_category == 'medium_TOU':
                 if total_bill_input is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.reverse_tnb_nd_medium_tou_bill(total_bill_input, maximum_demand, peak_percent)
+                    result = tnb_non_domestic.reverse_tnb_nd_medium_tou_bill(total_bill_input, maximum_demand, peak_percent,afa_input)
                 else: st.warning("Please enter the total bill amount, maximum demand, and assumed peak percentage.")
             elif tariff_category == 'high_General':
                 if total_bill_input is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.reverse_tnb_nd_high_general_bill(total_bill_input, maximum_demand)
+                    result = tnb_non_domestic.reverse_tnb_nd_high_general_bill(total_bill_input, maximum_demand,afa_input)
                 else: st.warning("Please enter the total bill amount and maximum demand.")
             elif tariff_category == 'high_TOU':
                 if total_bill_input is not None and maximum_demand is not None:
-                    result = tnb_non_domestic.reverse_tnb_nd_high_tou_bill(total_bill_input, maximum_demand, peak_percent)
+                    result = tnb_non_domestic.reverse_tnb_nd_high_tou_bill(total_bill_input, maximum_demand, peak_percent,afa_input)
                 else: st.warning("Please enter the total bill amount, maximum demand, and assumed peak percentage.")
 
             if result:
@@ -185,7 +195,7 @@ elif tariff_type == "Domestic":
                 elif tariff_category == 'TOU':
                     result = tnb_domestic.calculate_bill_from_usage(total_usage, peak_percent,afa_input)
             else:
-                st.warning("Please enter a total usage.")
+                st.warning("Please enter a total usage and afa.")
 
             if result:
                 st.subheader("Calculation Results:")
@@ -228,5 +238,6 @@ elif tariff_type == "Domestic":
                     df_result = pd.DataFrame(result.items(), columns=['Metric', 'Value'])
                     df_result['Value'] = df_result['Value'].apply(lambda x: f"{x:.2f}" if isinstance(x, (int, float)) else x)
                     st.dataframe(df_result, hide_index=True, use_container_width=True)
+
 
 
