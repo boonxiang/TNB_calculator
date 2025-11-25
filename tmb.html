@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNB Electricity Bill Calculator</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #142850;
+        }
+
+        /* Custom styles for results table */
+        .results-table th,
+        .results-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+
+        .results-table th {
+            background-color: #e5e7eb;
+        }
+
+        .results-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        /* --- Tab Styles for Visual Feedback --- */
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: #142850;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border-bottom: 3px solid transparent;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .tab-button:hover:not(.active) {
+            background-color: #f3f4f6;
+        }
+
+        .tab-button.active {
+            color: #F1C232;
+            border-color: #F1C232;
+            background-color: #ffffff;
+        }
+
+        /* --- Animation for Button Click/Enter Key --- */
+        @keyframes button-press {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            }
+
+            50% {
+                transform: scale(0.98);
+                box-shadow: 0 0 0 3px rgba(241, 194, 50, 0.7);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .calculate-button-animate {
+            animation: button-press 0.3s ease-out;
+        }
+
+        /* --- Animation for Toast Pop-up --- */
+        #toast-notification {
+            transition: top 0.3s ease-out, opacity 0.3s ease-out;
+            top: -5rem;
+            /* Start position: off-screen above */
+            opacity: 0;
+        }
+
+        .toast-show {
+            top: 2rem !important;
+            /* End position: 2rem from top */
+            opacity: 1 !important;
+        }
+
+        /* --- Animation for Results Section --- */
+        @keyframes slideInFromLeft {
+            0% {
+                opacity: 0;
+                transform: translateX(-100%);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .animate-slide-in {
+            animation: slideInFromLeft 1s ease-out forwards;
+        }
+
+        /* Keyframes for content fade-in */
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .result-row-animate {
+            opacity: 0;
+            /* Start hidden */
+            animation: fadeIn 0.4s ease-in forwards;
+        }
+
+        /* Event Modal Transitions */
+        #event-modal {
+            transition: opacity 0.3s ease-out;
+        }
+        #event-modal.hidden {
+            display: none;
+        }
+
+        #event-modal > div {
+            transition: transform 0.3s ease-out;
+        }
+        .event-show {
+            opacity: 1 !important;
+        }
+        .event-show > div {
+            transform: scale(1) !important;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8">
+
+    <!-- Toast Notification Pop-up -->
+    <div id="toast-notification"
+        class="fixed left-1/2 transform -translate-x-1/2 p-4 rounded-lg shadow-xl bg-green-600 text-white text-lg font-bold z-50">
+        <!-- Message will be injected here -->
+    </div>
+
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg">
+
+        <!-- Header Section -->
+        <header class="bg-[#F1C232] text-white p-6 rounded-t-xl text-center">
+            <h1 class="text-3xl font-bold">TNB Electricity Bill Calculator</h1>
+            <p class="mt-2 text-white text-lg">Calculate your bill or estimate usage with ease.</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="bg-[#F4C769] p-6 md:p-8">
+
+            <!-- Tabbed Navigation -->
+            <div class="flex border-b border-gray-200 mb-6">
+                <button id="tab-calculate" class="tab-button active">Calculate Bill from Usage</button>
+                <button id="tab-estimate" class="tab-button">Estimate Usage from Bill</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content">
+
+                <!-- Calculate Bill Tab -->
+                <div id="content-calculate" class="tab-pane">
+
+                    <!-- Tariff Selector Container -->
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Choose a Tariff</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="calc-tariff-type-select" class="block text-gray-700 font-medium mb-1">Tariff
+                                    Type</label>
+                                <select id="calc-tariff-type-select"
+                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="domestic">Domestic</option>
+                                    <option value="non-domestic">Non-Domestic</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="calc-tariff-category-select"
+                                    class="block text-gray-700 font-medium mb-1">Category</label>
+                                <select id="calc-tariff-category-select"
+                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="general">General</option>
+                                    <option value="TOU">TOU (Time of Use)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Domestic General Calculate Form (Wrapped in a form tag) -->
+                    <form id="dom-general-calc-form" class="form-pane bg-blue-50 p-6 rounded-lg border border-blue-200"
+                        onsubmit="event.preventDefault(); triggerCalculation('dom-gen-calc-button');">
+                        <h3 class="text-xl font-bold mb-4 text-blue-800">Domestic (General)</h3>
+                        <div class="mb-4">
+                            <label for="dom-gen-calc-usage" class="block text-gray-700 font-medium mb-1">Total Usage
+                                (kWh)</label>
+                            <input type="number" id="dom-gen-calc-usage" min="1"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="mb-4">
+                            <label for="dom-gen-calc-afa" class="block text-gray-700 font-medium mb-1">AFA</label>
+                            <input type="number" id="dom-gen-calc-afa" step="0.0001" value="-0.0145"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button id="dom-gen-calc-button"
+                            class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300">Calculate
+                            Bill</button>
+                    </form>
+
+                    <!-- Domestic TOU Calculate Form (Wrapped in a form tag) -->
+                    <form id="dom-tou-calc-form"
+                        class="form-pane bg-indigo-50 p-6 rounded-lg border border-indigo-200 hidden"
+                        onsubmit="event.preventDefault(); triggerCalculation('dom-tou-calc-button');">
+                        <h3 class="text-xl font-bold mb-4 text-indigo-800">Domestic (TOU)</h3>
+                        <div class="mb-4">
+                            <label for="dom-tou-calc-usage" class="block text-gray-700 font-medium mb-1">Total Usage
+                                (kWh)</label>
+                            <input type="number" id="dom-tou-calc-usage" min="1"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="mb-4">
+                            <label for="dom-tou-calc-peak" class="block text-gray-700 font-medium mb-1">Peak Usage
+                                Percentage (%)</label>
+                            <input type="range" id="dom-tou-calc-peak" min="0" max="100" value="50"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                            <span id="dom-tou-calc-peak-value" class="text-sm text-gray-600">50%</span>
+                        </div>
+                        <div class="mb-4">
+                            <label for="dom-tou-calc-afa" class="block text-gray-700 font-medium mb-1">AFA</label>
+                            <input type="number" id="dom-tou-calc-afa" step="0.0001" value="-0.0145"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button id="dom-tou-calc-button"
+                            class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 transition duration-300">Calculate
+                            Bill</button>
+                    </form>
+
+                    <!-- Non-Domestic Calculate Form (Wrapped in a form tag) -->
+                    <form id="nd-calculate-form"
+                        class="form-pane bg-purple-50 p-6 rounded-lg border border-purple-200 hidden"
+                        onsubmit="event.preventDefault(); triggerCalculation('nd-calc-button');">
+                        <h3 class="text-xl font-bold mb-4 text-purple-800">Non-Domestic</h3>
+                        <div class="mb-4">
+                            <label for="nd-calc-usage" class="block text-gray-700 font-medium mb-1">Total Usage
+                                (kWh)</label>
+                            <input type="number" id="nd-calc-usage" min="1"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div id="nd-calc-demand-group" class="mb-4 hidden">
+                            <label for="nd-calc-demand" class="block text-gray-700 font-medium mb-1">Maximum Demand
+                                (kW)</label>
+                            <input type="number" id="nd-calc-demand" min="0" step="0.01"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div id="nd-calc-peak-group" class="mb-4 hidden">
+                            <label for="nd-calc-peak" class="block text-gray-700 font-medium mb-1">Peak Usage Percentage
+                                (%)</label>
+                            <input type="range" id="nd-calc-peak" min="0" max="100" value="50"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                            <span id="nd-calc-peak-value" class="text-sm text-gray-600">50%</span>
+                        </div>
+                        <div class="mb-4">
+                            <label for="nd-calc-afa" class="block text-gray-700 font-medium mb-1">AFA</label>
+                            <input type="number" id="nd-calc-afa" step="0.0001" value="-0.0145"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button id="nd-calc-button"
+                            class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-md hover:bg-purple-700 transition duration-300">Calculate
+                            Bill</button>
+                    </form>
+                </div>
+
+                <!-- Estimate Usage Tab -->
+                <div id="content-estimate" class="tab-pane hidden">
+
+                    <!-- Tariff Selector Container -->
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Choose a Tariff</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="est-tariff-type-select" class="block text-gray-700 font-medium mb-1">Tariff
+                                    Type</label>
+                                <select id="est-tariff-type-select"
+                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="domestic">Domestic</option>
+                                    <option value="non-domestic">Non-Domestic</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="est-tariff-category-select"
+                                    class="block text-gray-700 font-medium mb-1">Category</label>
+                                <select id="est-tariff-category-select"
+                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="general">General</option>
+                                    <option value="TOU">TOU (Time of Use)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Domestic General Estimate Form (Wrapped in a form tag) -->
+                    <form id="dom-general-est-form" class="form-pane bg-blue-50 p-6 rounded-lg border border-blue-200"
+                        onsubmit="event.preventDefault(); triggerCalculation('dom-gen-est-button');">
+                        <h3 class="text-xl font-bold mb-4 text-blue-800">Domestic (General)</h3>
+                        <div class="mb-4">
+                            <label for="dom-gen-est-bill" class="block text-gray-700 font-medium mb-1">Total Bill Amount
+                                (RM)</label>
+                            <input type="number" id="dom-gen-est-bill" min="0.01" step="0.01"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="mb-4">
+                            <label for="dom-gen-est-afa" class="block text-gray-700 font-medium mb-1">AFA</label>
+                            <input type="number" id="dom-gen-est-afa" step="0.0001" value="-0.0145"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button id="dom-gen-est-button"
+                            class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300">Estimate
+                            Usage</button>
+                    </form>
+
+                    <!-- Domestic TOU Estimate Form (Wrapped in a form tag) -->
+                    <form id="dom-tou-est-form"
+                        class="form-pane bg-indigo-50 p-6 rounded-lg border border-indigo-200 hidden"
+                        onsubmit="event.preventDefault(); triggerCalculation('dom-tou-est-button');">
+                        <h3 class="text-xl font-bold mb-4 text-indigo-800">Domestic (TOU)</h3>
+                        <div class="mb-4">
+                            <label for="dom-tou-est-bill" class="block text-gray-700 font-medium mb-1">Total Bill Amount
+                                (RM)</label>
+                            <input type="number" id="dom-tou-est-bill" min="0.01" step="0.01"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="mb-4">
+                            <label for="dom-tou-est-peak" class="block text-gray-700 font-medium mb-1">Peak Usage
+                                Percentage (%)</label>
+                            <input type="range" id="dom-tou-est-peak" min="0" max="100" value="50"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                            <span id="dom-tou-est-peak-value" class="text-sm text-gray-600">50%</span>
+                        </div>
+                        <div class="mb-4">
+                            <label for="dom-tou-est-afa" class="block text-gray-700 font-medium mb-1">AFA</label>
+                            <input type="number" id="dom-tou-est-afa" step="0.0001" value="-0.0145"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button id="dom-tou-est-button"
+                            class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-md hover:bg-indigo-700 transition duration-300">Estimate
+                            Usage</button>
+                    </form>
+
+                    <!-- Non-Domestic Estimate Form (Wrapped in a form tag) -->
+                    <form id="nd-estimate-form"
+                        class="form-pane bg-purple-50 p-6 rounded-lg border border-purple-200 hidden"
+                        onsubmit="event.preventDefault(); triggerCalculation('nd-est-button');">
+                        <h3 class="text-xl font-bold mb-4 text-purple-800">Non-Domestic</h3>
+                        <div class="mb-4">
+                            <label for="nd-est-bill" class="block text-gray-700 font-medium mb-1">Total Bill Amount
+                                (RM)</label>
+                            <input type="number" id="nd-est-bill" min="0.01" step="0.01"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div id="nd-est-demand-group" class="mb-4 hidden">
+                            <label for="nd-est-demand" class="block text-gray-700 font-medium mb-1">Maximum Demand
+                                (kW)</label>
+                            <input type="number" id="nd-est-demand" min="0" step="0.01"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div id="nd-est-peak-group" class="mb-4 hidden">
+                            <label for="nd-est-peak" class="block text-gray-700 font-medium mb-1">Peak Usage Percentage
+                                (%)</label>
+                            <input type="range" id="nd-est-peak" min="0" max="100" value="50"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                            <span id="nd-est-peak-value" class="text-sm text-gray-600">50%</span>
+                        </div>
+                        <div class="mb-4">
+                            <label for="nd-est-afa" class="block text-gray-700 font-medium mb-1">AFA</label>
+                            <input type="number" id="nd-est-afa" step="0.0001" value="-0.0145"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <button id="nd-est-button"
+                            class="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-md hover:bg-purple-700 transition duration-300">Estimate
+                            Usage</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="mt-8 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Calculation Results </h2>
+                <div id="result-message" class="p-4 rounded-md font-medium"></div>
+                <div class="bg-white rounded-lg shadow overflow-hidden mt-4 border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200 results-table">
+                        <tbody id="results-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Results will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal for general alerts (e.g., input validation) -->
+            <div id="alert-modal"
+                class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                    <div class="mt-3 text-center">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Input Error</h3>
+                        <div class="mt-2 px-7 py-3">
+                            <p id="alert-message" class="text-sm text-gray-500"></p>
+                        </div>
+                        <div class="items-center px-4 py-3">
+                            <button id="alert-close-btn"
+                                class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Custom Modal for Random & Time Bomb Events (New) -->
+    <div id="event-modal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full hidden z-50 transition-opacity duration-300 opacity-0">
+        <div
+            class="relative top-20 mx-auto p-8 border w-96 shadow-2xl rounded-xl bg-white text-center transform scale-95 transition-transform duration-300">
+            <div id="event-content" class="mt-3">
+                <!-- Content will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global Variables for New Features ---
+        let calculationCount = 0;
+        const MAX_CALCULATIONS_BEFORE_CHECK = 20;
+
+        // --- DATA AND RATES (Keep existing data) ---
+        const TNB_DOMESTRIC_RATES = {
+            'low_general': { // ≤1500 kWh
+                'energy': 0.2703,
+                'capacity': 0.0455,
+                'network': 0.1285,
+                'retail': 10.00
+            },
+            'high_general': { // >1500 kWh
+                'energy': 0.3703,
+                'capacity': 0.0455,
+                'network': 0.1285,
+                'retail': 10.00
+            },
+            'low_TOU': { // ≤1500 kWh
+                'peak': 0.2852,
+                'off_peak': 0.2443,
+                'capacity': 0.0455,
+                'network': 0.1285,
+                'retail': 10.00
+            },
+            'high_TOU': { // >1500 kWh
+                'peak': 0.3852,
+                'off_peak': 0.3443,
+                'capacity': 0.0455,
+                'network': 0.1285,
+                'retail': 10.00
+            }
+        };
+
+        const TNB_Non_Domestic_RATES = {
+            'low_General': {
+                'energy': 0.2703,
+                'capacity': 0.0883,
+                'network': 0.1482,
+                'retail': 20.00
+            },
+            'low_TOU': {
+                'peak': 0.2852,
+                'off_peak': 0.2443,
+                'capacity': 0.0883,
+                'network': 0.1482,
+                'retail': 20.00
+            },
+            'medium_General': {
+                'energy': 0.2983,
+                'capacity': 29.43,
+                'network': 59.84,
+                'retail': 200.00
+            },
+            'medium_TOU': {
+                'peak': 0.3132,
+                'off_peak': 0.2723,
+                'capacity': 30.19,
+                'network': 66.87,
+                'retail': 200.00
+            },
+            'high_General': {
+                'energy': 0.4303,
+                'capacity': 16.68,
+                'network': 14.53,
+                'retail': 250.00
+            },
+            'high_TOU': {
+                'peak': 0.4452,
+                'off_peak': 0.4043,
+                'capacity': 21.76,
+                'network': 23.06,
+                'retail': 250.00
+            }
+        };
+
+        const DomesticCategoryOptions = {
+            general: "General",
+            TOU: "TOU (Time of Use)"
+        };
+
+        const NonDomesticCategoryOptions = {
+            low_General: "Low General",
+            low_TOU: "Low TOU",
+            medium_General: "Medium General",
+            medium_TOU: "Medium TOU",
+            high_General: "High General",
+            high_TOU: "High TOU"
+        };
+
+
+        // --- Helper Functions ---
+        function round(value, decimals) {
+            return Number(Math.round(value + 'e' + decimals) + 'e-' + decimals);
+        }
+
+        function showAlert(message) {
+            document.getElementById('alert-message').innerText = message;
+            document.getElementById('alert-modal').classList.remove('hidden');
+        }
+
+        /**
+         * Displays a temporary toast notification with the final result.
+         * @param {string} message - The message to display.
+         */
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            toast.innerText = message;
+            // Show the toast with animation
+            toast.classList.add('toast-show');
+
+            // Hide the toast after 2 seconds (2000 ms)
+            setTimeout(() => {
+                toast.classList.remove('toast-show');
+            }, 2000);
+        }
+
+        /**
+         * Triggers the calculation process wrapper.
+         * @param {string} buttonId - The ID of the button that was pressed.
+         */
+        function triggerCalculation(buttonId) {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                // 1. Add animation class
+                button.classList.add('calculate-button-animate');
+                
+                // 2. Process the calculation through the event checks
+                processCalculation(buttonId);
+
+                // 3. Remove animation class after duration
+                setTimeout(() => {
+                    button.classList.remove('calculate-button-animate');
+                }, 300); // Matches the CSS animation duration
+            }
+        }
+
+        /**
+         * Shows a custom event modal for a specified duration.
+         * @param {string} contentHtml - The HTML content to display.
+         * @param {number} durationMs - How long to display the modal in milliseconds.
+         * @param {function} callback - Function to run when the modal closes.
+         */
+        function showEventModal(contentHtml, durationMs, callback) {
+            const modal = document.getElementById('event-modal');
+            const content = document.getElementById('event-content');
+            const modalInner = modal.querySelector('.relative');
+
+            content.innerHTML = contentHtml;
+            
+            // Show the modal with transition
+            modal.classList.remove('hidden');
+            // Force reflow for transition to work on display block
+            void modal.offsetWidth; 
+            modal.classList.add('event-show');
+            modalInner.classList.remove('scale-95');
+
+            // Hide the modal after durationMs and run the callback
+            setTimeout(() => {
+                // Start exit transition
+                modalInner.classList.add('scale-95');
+                modal.classList.remove('event-show');
+
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    if (callback) {
+                        callback();
+                    }
+                }, 300); // Match CSS transition duration
+            }, durationMs);
+        }
+
+        /**
+         * Checks the random roll condition and triggers the event if successful.
+         * @param {function} nextStep - The original calculation function to run if the event is NOT triggered.
+         * @returns {boolean} True if the event was triggered and calculation was postponed, false otherwise.
+         */
+        function checkRandomRoll(nextStep) {
+            calculationCount++;
+            
+            if (calculationCount >= MAX_CALCULATIONS_BEFORE_CHECK) {
+                const roll = Math.floor(Math.random() * 10); // Rolls 0-9
+                const triggerNumbers = [2, 3, 6, 9];
+
+                if (triggerNumbers.includes(roll)) {
+                    const coffeeHtml = `
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Random Break (Roll: ${roll})</h3>
+                        <p class="text-lg text-red-600 mb-4 font-semibold">I am tired, rest a well then calculate for you.</p>
+                        <div class="text-5xl my-4">☕😴</div>
+                        <p class="text-sm text-gray-500">Resuming calculation in 4 seconds...</p>
+                    `;
+                    
+                    showEventModal(coffeeHtml, 4000, nextStep); // 4 second break
+                    calculationCount = 0; // Reset counter after successful roll
+                    return true;
+                } else {
+                    calculationCount = 0; // Reset counter for unsuccessful roll attempt
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Checks the time bomb condition and triggers the event if successful.
+         * @param {function} nextStep - The original calculation function to run if the event is NOT triggered.
+         * @returns {boolean} True if the event was triggered and calculation was postponed, false otherwise.
+         */
+        function checkTimeBomb(nextStep) {
+            const now = new Date();
+            const minutes = now.getMinutes();
+            // Check for the minute 30. We use a small window (30:00 to 30:09) to make it strict.
+            if (minutes === 30 && now.getSeconds() < 10) { 
+                const timeBombHtml = `
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">💣 Time Bomb Alert!</h3>
+                    <p class="text-lg text-gray-700 mb-4">It's ${now.toLocaleTimeString()}! Calculating is forbidden right now.</p>
+                    <div class="text-5xl my-4">⏱️</div>
+                    <p class="text-sm text-gray-500">Calculation will proceed in 10 seconds...</p>
+                `;
+                
+                showEventModal(timeBombHtml, 10000, nextStep); // 10 second delay
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * New wrapper function that handles the logic flow before the actual calculation.
+         * @param {string} buttonId - The ID of the button pressed.
+         */
+        function processCalculation(buttonId) {
+            // Function to dispatch the original calculation event
+            const actualCalculation = () => {
+                switch (buttonId) {
+                    case 'dom-gen-calc-button': 
+                        document.getElementById('dom-gen-calc-button').dispatchEvent(new Event('calculate_dom_gen', { bubbles: true }));
+                        break;
+                    case 'dom-gen-est-button':
+                        document.getElementById('dom-gen-est-button').dispatchEvent(new Event('calculate_dom_gen_est', { bubbles: true }));
+                        break;
+                    case 'dom-tou-calc-button':
+                        document.getElementById('dom-tou-calc-button').dispatchEvent(new Event('calculate_dom_tou', { bubbles: true }));
+                        break;
+                    case 'dom-tou-est-button':
+                        document.getElementById('dom-tou-est-button').dispatchEvent(new Event('calculate_dom_tou_est', { bubbles: true }));
+                        break;
+                    case 'nd-calc-button':
+                        document.getElementById('nd-calc-button').dispatchEvent(new Event('calculate_nd_calc', { bubbles: true }));
+                        break;
+                    case 'nd-est-button':
+                        document.getElementById('nd-est-button').dispatchEvent(new Event('calculate_nd_est', { bubbles: true }));
+                        break;
+                }
+            };
+
+            // Priority 1: Time Bomb Check 
+            if (checkTimeBomb(actualCalculation)) {
+                return;
+            }
+
+            // Priority 2: Random Roll Check 
+            if (checkRandomRoll(actualCalculation)) {
+                return;
+            }
+
+            // If neither is triggered, proceed immediately
+            actualCalculation();
+        }
+
+        // --- CALCULATION LOGIC (Keep existing calculation functions) ---
+        function calculate_eei_domestic(total_kwh) { 
+            if (total_kwh > 1000) return 0.0;
+            const slabs = [
+                [1, 200, 25.0], [201, 250, 24.5], [251, 300, 22.5],
+                [301, 350, 21.0], [351, 400, 17.0], [401, 450, 14.5],
+                [451, 500, 12.0], [501, 550, 10.5], [551, 600, 9.0],
+                [601, 650, 7.5], [651, 700, 5.5], [701, 750, 4.5],
+                [751, 800, 4.0], [801, 850, 2.5], [851, 900, 1.0],
+                [901, 1000, 0.5],
+            ];
+            for (const [lower, upper, rate_sen] of slabs) {
+                if (total_kwh >= lower && total_kwh <= upper) {
+                    return round(total_kwh * (rate_sen / 100), 2);
+                }
+            }
+            return 0.0;
+        }
+
+        function calculate_bill_from_usage_domestic_general(total_usage, afa_input) {
+            const rates = total_usage <= 1500 ? TNB_DOMESTRIC_RATES['low_general'] : TNB_DOMESTRIC_RATES['high_general'];
+
+            const non_taxable_kwh = Math.min(total_usage, 600);
+            const taxable_kwh = Math.max(0, total_usage - 600);
+
+            const eei_rebate = calculate_eei_domestic(total_usage);
+
+            const afa = round(total_usage * afa_input, 2);
+
+            const eei_rebate_non_tax = round(eei_rebate * (non_taxable_kwh / total_usage), 2);
+            const eei_rebate_tax = round(eei_rebate * (taxable_kwh / total_usage), 2);
+
+            const afa_non_tax = round(afa * (non_taxable_kwh / total_usage), 2);
+            const afa_tax = round(afa * (taxable_kwh / total_usage), 2);
+
+            const nt_energy = round(non_taxable_kwh * rates['energy'], 2);
+            const nt_capacity = round(non_taxable_kwh * rates['capacity'], 2);
+            const nt_network = round(non_taxable_kwh * rates['network'], 2);
+            const nt_retail = 0;
+
+            const nt_net_subtotal = round(nt_energy + nt_capacity + nt_network + nt_retail - eei_rebate_non_tax, 2);
+            const nt_subtotal = round(nt_net_subtotal + afa_non_tax, 2);
+
+            const t_energy = round(taxable_kwh * rates['energy'], 2);
+            const t_capacity = round(taxable_kwh * rates['capacity'], 2);
+            const t_network = round(taxable_kwh * rates['network'], 2);
+            const t_retail = rates['retail'];
+
+            const t_net_subtotal = round(t_energy + t_capacity + t_network + t_retail - eei_rebate_tax, 2);
+            const t_subtotal = round(t_net_subtotal + afa_tax, 2);
+
+            const subtotal = round(nt_subtotal + t_subtotal, 2);
+            const service_tax = round((t_subtotal * 0.08), 2);
+            const kwtbb = round((subtotal - t_retail - afa) * 0.016, 2);
+            const total_bill = round(subtotal + service_tax + kwtbb, 2);
+
+            return {
+                'Tariff Category': 'General',
+                'Total Usage (kWh)': round(total_usage, 2),
+                'Subtotal': round(subtotal, 2),
+                'AFA Total': round(afa, 2),
+                'Service Tax': round(service_tax, 2),
+                'KWTBB': round(kwtbb, 2),
+                'EEI Rebate': round(eei_rebate, 2),
+                'Total Bill (RM)': round(total_bill, 2),
+            };
+        }
+
+        function calculate_bill_from_usage_domestic_tou(total_usage, peak_percent, afa_input) {
+            const rates = total_usage <= 1500 ? TNB_DOMESTRIC_RATES['low_TOU'] : TNB_DOMESTRIC_RATES['high_TOU'];
+
+            const peak_usage = round(total_usage * (peak_percent / 100), 2);
+            const off_peak_usage = round(total_usage - peak_usage, 2);
+
+            const non_taxable_kwh = Math.min(total_usage, 600);
+            const taxable_kwh = Math.max(0, total_usage - 600);
+
+            const eei_rebate = calculate_eei_domestic(total_usage);
+
+            const afa = round(total_usage * afa_input, 2);
+
+            const nt_peak = Math.min(non_taxable_kwh, peak_usage);
+            const remaining_nt_quota = round(non_taxable_kwh - nt_peak, 2);
+            const nt_off_peak = Math.min(remaining_nt_quota, off_peak_usage);
+
+            const t_peak = round(peak_usage - nt_peak, 2);
+            const t_off_peak = round(off_peak_usage - nt_off_peak, 2);
+
+            const usage_ratio = total_usage > 0 ? (non_taxable_kwh / total_usage) : 0;
+            const taxable_ratio = total_usage > 0 ? (taxable_kwh / total_usage) : 0;
+
+            const eei_rebate_non_tax = round(eei_rebate * usage_ratio, 2);
+            const eei_rebate_tax = round(eei_rebate * taxable_ratio, 2);
+
+            const afa_non_tax = round(afa * usage_ratio, 2);
+            const afa_tax = round(afa * taxable_ratio, 2);
+
+            const nt_energy_peak = round(nt_peak * rates['peak'], 2);
+            const nt_energy_off_peak = round(nt_off_peak * rates['off_peak'], 2);
+            const nt_capacity = round(non_taxable_kwh * rates['capacity'], 2);
+            const nt_network = round(non_taxable_kwh * rates['network'], 2);
+            const nt_retail = 0;
+
+            const nt_net_subtotal = round(nt_energy_peak + nt_energy_off_peak + nt_capacity + nt_network + nt_retail - eei_rebate_non_tax, 2);
+            const nt_subtotal = round(nt_net_subtotal + afa_non_tax, 2);
+
+            const t_energy_peak = round(t_peak * rates['peak'], 2);
+            const t_energy_off_peak = round(t_off_peak * rates['off_peak'], 2);
+            const t_capacity = round(taxable_kwh * rates['capacity'], 2);
+            const t_network = round(taxable_kwh * rates['network'], 2);
+            const t_retail = rates['retail'];
+
+            const t_net_subtotal = round(t_energy_peak + t_energy_off_peak + t_capacity + t_network + t_retail - eei_rebate_tax, 2);
+            const t_subtotal = round(t_net_subtotal + afa_tax, 2);
+
+
+            const energy_peak = round(peak_usage * rates['peak'], 2);
+            const energy_off_peak = round(off_peak_usage * rates['off_peak'], 2);
+            const capacity_total = round(total_usage * rates['capacity'], 2);
+            const network_total = round(total_usage * rates['network'], 2);
+            const retail = rates['retail'];
+
+            const net_subtotal = round(energy_peak + energy_off_peak + capacity_total + network_total + retail - eei_rebate, 2);
+            const subtotal = round(net_subtotal + afa, 2);
+            const service_tax = round(t_subtotal * 0.08, 2);
+            const kwtbb = round((net_subtotal - retail) * 0.016, 2);
+            const total_bill = round(subtotal + service_tax + kwtbb, 2);
+
+            return {
+                'Tariff Category': 'TOU',
+                'Total Usage (kWh)': round(total_usage, 2),
+                'Peak Usage (kWh)': peak_usage,
+                'Off-Peak Usage (kWh)': off_peak_usage,
+                'Energy Peak Charge': energy_peak,
+                'Energy Off-Peak Charge': energy_off_peak,
+                'Capacity Charge': capacity_total,
+                'Network Charge': network_total,
+                'Retail Charge': retail,
+                'EEI Rebate': eei_rebate,
+                'AFA Total': afa,
+                'Subtotal': subtotal,
+                'Service Tax': service_tax,
+                'KWTBB': kwtbb,
+                'Total Bill (RM)': total_bill,
+            };
+        }
+
+        function reverse_tnb_domestic_general_bill(total_bill_input, afa_input, tolerance = 0.01) {
+            let low = 1.0;
+            let high = 1000000.0;
+            let guess = (low + high) / 2;
+            let iterations = 0;
+            const max_iterations = 1000;
+            let best_guess_kwh = 0;
+            let min_diff = Infinity;
+            let best_result = null;
+
+            while (iterations < max_iterations) {
+                const result = calculate_bill_from_usage_domestic_general(guess, afa_input);
+                const calculated_bill = result['Total Bill (RM)'];
+                const difference = calculated_bill - total_bill_input;
+
+                if (Math.abs(difference) < min_diff) {
+                    min_diff = Math.abs(difference);
+                    best_guess_kwh = guess;
+                    best_result = result;
+                }
+
+                if (Math.abs(difference) <= tolerance) {
+                    return {
+                        'Estimated Total Usage (kWh)': round(guess, 2),
+                        'Matched Total Bill (RM)': round(calculated_bill, 2),
+                        ...result
+                    };
+                }
+
+                if (calculated_bill < total_bill_input) {
+                    low = guess;
+                } else {
+                    high = guess;
+                }
+
+                guess = (low + high) / 2;
+                iterations += 1;
+            }
+
+            // Fallback if not matched within tolerance
+            return {
+                'error': 'No perfect match found, showing best guess.',
+                'Estimated Total Usage (kWh)': round(best_guess_kwh, 2),
+                'Best Matched Bill (RM)': round(best_result['Total Bill (RM)'], 2),
+                'Difference (RM)': round(min_diff, 2)
+            };
+        }
+
+        function reverse_tnb_domestic_tou_bill(total_bill_input, peak_percent, afa_input, tolerance = 0.01) {
+            let low = 1.0;
+            let high = 1000000.0;
+            let guess = (low + high) / 2;
+            let iterations = 0;
+            const max_iterations = 1000;
+            let best_guess_kwh = 0;
+            let min_diff = Infinity;
+            let best_result = null;
+
+            while (iterations < max_iterations) {
+                const result = calculate_bill_from_usage_domestic_tou(guess, peak_percent, afa_input);
+                const calculated_bill = result['Total Bill (RM)'];
+                const difference = calculated_bill - total_bill_input;
+
+                if (Math.abs(difference) < min_diff) {
+                    min_diff = Math.abs(difference);
+                    best_guess_kwh = guess;
+                    best_result = result;
+                }
+
+                if (Math.abs(difference) <= tolerance) {
+                    return {
+                        'Estimated Total Usage (kWh)': round(guess, 2),
+                        'Matched Total Bill (RM)': round(calculated_bill, 2),
+                        ...result
+                    };
+                }
+
+                if (calculated_bill < total_bill_input) {
+                    low = guess;
+                } else {
+                    high = guess;
+                }
+
+                guess = (low + high) / 2;
+                iterations += 1;
+            }
+
+            // Fallback if not matched within tolerance
+            return {
+                'error': 'No perfect match found, showing best guess.',
+                'Estimated Total Usage (kWh)': round(best_guess_kwh, 2),
+                'Best Matched Bill (RM)': round(best_result['Total Bill (RM)'], 2),
+                'Difference (RM)': round(min_diff, 2)
+            };
+        }
+
+        function calculate_eei_non_domestic(total_kwh) {
+            return total_kwh <= 200 ? 0.11 : 0;
+        }
+
+        function calculate_bill_from_usage_nd_general(tariff_category, total_usage, max_demand, afa_input) {
+            const rates = TNB_Non_Domestic_RATES[tariff_category];
+            const afa = round(total_usage * afa_input, 2);
+            const eei_rebate_rate = calculate_eei_non_domestic(total_usage);
+
+            const energy = round(total_usage * rates['energy'], 2);
+            let capacity;
+            if (['medium_General', 'high_General'].includes(tariff_category)) {
+                capacity = round(max_demand * rates['capacity'], 2);
+            } else {
+                capacity = round(total_usage * rates['capacity'], 2);
+            }
+            let network;
+            if (['medium_General', 'high_General'].includes(tariff_category)) {
+                network = round(max_demand * rates['network'], 2);
+            } else {
+                network = round(total_usage * rates['network'], 2);
+            }
+            const retail = rates['retail'];
+            const eei_rebate = round(total_usage * eei_rebate_rate, 2);
+
+            const net_subtotal = round(energy + capacity + network + retail - eei_rebate, 2);
+            const subtotal = round(net_subtotal + afa, 2);
+            const kwtbb = round((net_subtotal - retail) * 0.016, 2);
+            const total_bill = round(subtotal + kwtbb, 2);
+
+            return {
+                'Tariff Category': tariff_category,
+                'Total Usage (kWh)': round(total_usage, 2),
+                'Max Demand (kW)': round(max_demand, 2),
+                'Energy Charge': energy,
+                'Capacity Charge': capacity,
+                'Network Charge': network,
+                'Retail Charge': retail,
+                'EEI Rebate': eei_rebate,
+                'AFA Total': afa,
+                'Subtotal Before Tax': net_subtotal,
+                'Subtotal After AFA': subtotal,
+                'KWTBB': kwtbb,
+                'Total Bill (RM)': round(total_bill, 2),
+            };
+        }
+
+        function calculate_bill_from_usage_nd_tou(tariff_category, total_usage, max_demand, peak_percent, afa_input) {
+            const rates = TNB_Non_Domestic_RATES[tariff_category];
+            const peak_usage = total_usage * (peak_percent / 100);
+            const off_peak_usage = total_usage - peak_usage;
+            const afa = round(total_usage * afa_input, 2);
+            const eei_rebate_rate = calculate_eei_non_domestic(total_usage);
+
+            const energy_peak = round(peak_usage * rates['peak'], 2);
+            const energy_off_peak = round(off_peak_usage * rates['off_peak'], 2);
+            let capacity;
+            if (['medium_TOU', 'high_TOU'].includes(tariff_category)) {
+                capacity = round(max_demand * rates['capacity'], 2);
+            } else {
+                capacity = round(total_usage * rates['capacity'], 2);
+            }
+            let network;
+            if (['medium_TOU', 'high_TOU'].includes(tariff_category)) {
+                network = round(max_demand * rates['network'], 2);
+            } else {
+                network = round(total_usage * rates['network'], 2);
+            }
+            const retail = rates['retail'];
+            const eei_rebate = round(total_usage * eei_rebate_rate, 2);
+
+            const net_subtotal = round(energy_peak + energy_off_peak + capacity + network + retail - eei_rebate, 2);
+            const subtotal = round(net_subtotal + afa, 2);
+            const kwtbb = round((net_subtotal - retail) * 0.016, 2);
+            const total_bill = round(subtotal + kwtbb, 2);
+
+            return {
+                'Tariff Category': tariff_category,
+                'Total Usage (kWh)': round(total_usage, 2),
+                'Peak Usage (kWh)': round(peak_usage, 2),
+                'Off-Peak Usage (kWh)': round(off_peak_usage, 2),
+                'Max Demand (kW)': round(max_demand, 2),
+                'Energy Peak Charge': energy_peak,
+                'Energy Off-Peak Charge': energy_off_peak,
+                'Capacity Charge': capacity,
+                'Network Charge': network,
+                'Retail Charge': retail,
+                'EEI Rebate': eei_rebate,
+                'AFA Total': afa,
+                'Subtotal Before Tax': net_subtotal,
+                'Subtotal After AFA': subtotal,
+                'KWTBB': kwtbb,
+                'Total Bill (RM)': round(total_bill, 2),
+            };
+        }
+
+        function reverse_tnb_nd_bill(tariff_category, total_bill_input, max_demand, peak_percent, afa_input, tolerance = 0.01, max_kwh = 10000000) {
+            let low = 1.0;
+            let high = max_kwh;
+            let guess = (low + high) / 2;
+            let iterations = 0;
+            const max_iterations = 100;
+            let best_guess_kwh = 0;
+            let min_diff = Infinity;
+            let best_result = null;
+
+            let calculate_func = tariff_category.endsWith('TOU') ?
+                (usage) => calculate_bill_from_usage_nd_tou(tariff_category, usage, max_demand, peak_percent, afa_input) :
+                (usage) => calculate_bill_from_usage_nd_general(tariff_category, usage, max_demand, afa_input);
+
+            while (iterations < max_iterations) {
+                const result = calculate_func(guess);
+                const calculated_bill = result['Total Bill (RM)'];
+                const difference = calculated_bill - total_bill_input;
+
+                if (Math.abs(difference) < min_diff) {
+                    min_diff = Math.abs(difference);
+                    best_guess_kwh = guess;
+                    best_result = result;
+                }
+
+                if (Math.abs(difference) <= tolerance) {
+                    return {
+                        'Estimated Total Usage (kWh)': round(guess, 2),
+                        'Matched Total Bill (RM)': round(calculated_bill, 2),
+                        ...result
+                    };
+                }
+
+                if (calculated_bill < total_bill_input) {
+                    low = guess;
+                } else {
+                    high = guess;
+                }
+
+                guess = (low + high) / 2;
+                iterations += 1;
+            }
+
+            // Fallback if not matched within tolerance
+            return {
+                'error': 'No perfect match found, showing best guess.',
+                'Estimated Total Usage (kWh)': round(best_guess_kwh, 2),
+                'Best Matched Bill (RM)': round(best_result['Total Bill (RM)'], 2),
+                'Difference (RM)': round(min_diff, 2)
+            };
+        }
+
+
+        // --- UI INTERACTION LOGIC ---
+
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        const forms = document.querySelectorAll('form.form-pane');
+
+        const ndCalcDemandGroup = document.getElementById('nd-calc-demand-group');
+        const ndCalcPeakGroup = document.getElementById('nd-calc-peak-group');
+        const ndEstDemandGroup = document.getElementById('nd-est-demand-group');
+        const ndEstPeakGroup = document.getElementById('nd-est-peak-group');
+
+        const ndCalcPeakValue = document.getElementById('nd-calc-peak-value');
+        const ndEstPeakValue = document.getElementById('nd-est-peak-value');
+        const domTouCalcPeakValue = document.getElementById('dom-tou-calc-peak-value');
+        const domTouEstPeakValue = document.getElementById('dom-tou-est-peak-value');
+
+        const resultsSection = document.getElementById('results-section');
+        const resultsBody = document.getElementById('results-body');
+        const resultMessage = document.getElementById('result-message');
+        const alertModal = document.getElementById('alert-modal');
+
+        const calcTariffTypeSelect = document.getElementById('calc-tariff-type-select');
+        const calcTariffCategorySelect = document.getElementById('calc-tariff-category-select');
+        const estTariffTypeSelect = document.getElementById('est-tariff-type-select');
+        const estTariffCategorySelect = document.getElementById('est-tariff-category-select');
+
+        function updateCategoryOptions(tabId, tariffType) {
+            const categorySelect = tabId === 'content-calculate' ? calcTariffCategorySelect : estTariffCategorySelect;
+            categorySelect.innerHTML = '';
+
+            const options = tariffType === 'domestic' ? DomesticCategoryOptions : NonDomesticCategoryOptions;
+
+            for (const key in options) {
+                if (options.hasOwnProperty(key)) {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = options[key];
+                    categorySelect.appendChild(option);
+                }
+            }
+        }
+
+        function updateFormVisibility(tabId, tariffType, category) {
+            forms.forEach(form => form.classList.add('hidden'));
+            
+            ndCalcDemandGroup.classList.add('hidden');
+            ndCalcPeakGroup.classList.add('hidden');
+            ndEstDemandGroup.classList.add('hidden');
+            ndEstPeakGroup.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+
+            let targetForm;
+
+            if (tabId === 'content-calculate') {
+                if (tariffType === 'domestic') {
+                    if (category === 'general') {
+                        targetForm = document.getElementById('dom-general-calc-form');
+                    } else { // TOU
+                        targetForm = document.getElementById('dom-tou-calc-form');
+                    }
+                } else { // non-domestic
+                    targetForm = document.getElementById('nd-calculate-form');
+                    if (category.includes('TOU')) {
+                        ndCalcPeakGroup.classList.remove('hidden');
+                    }
+                    if (['medium_General', 'medium_TOU', 'high_General', 'high_TOU'].includes(category)) {
+                        ndCalcDemandGroup.classList.remove('hidden');
+                    }
+                }
+            } else { // 'content-estimate'
+                if (tariffType === 'domestic') {
+                    if (category === 'general') {
+                        targetForm = document.getElementById('dom-general-est-form');
+                    } else { // TOU
+                        targetForm = document.getElementById('dom-tou-est-form');
+                    }
+                } else { // non-domestic
+                    targetForm = document.getElementById('nd-estimate-form');
+                    if (category.includes('TOU')) {
+                        ndEstPeakGroup.classList.remove('hidden');
+                    }
+                    if (['medium_General', 'medium_TOU', 'high_General', 'high_TOU'].includes(category)) {
+                        ndEstDemandGroup.classList.remove('hidden');
+                    }
+                }
+            }
+
+            if (targetForm) {
+                targetForm.classList.remove('hidden');
+                const firstInput = targetForm.querySelector('input[type="number"]');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            }
+        }
+
+        function showResults(result) {
+            resultsBody.innerHTML = '';
+            
+            resultsSection.classList.remove('animate-slide-in');
+            resultsSection.classList.remove('hidden');
+            
+            requestAnimationFrame(() => {
+                resultsSection.classList.add('animate-slide-in');
+            });
+
+            resultMessage.className = 'p-4 rounded-md font-medium';
+
+            if (result.error) {
+                resultMessage.classList.add('bg-red-100', 'text-red-700');
+                resultMessage.innerText = `Error: ${result.error}`;
+
+                delete result.error;
+            } else {
+                resultMessage.classList.add('bg-green-100', 'text-green-700');
+                resultMessage.innerText = 'Calculation successful!';
+            }
+
+            let delay = 0;
+            const stagger = 0.1;
+            const slideInDuration = 1;
+
+            for (const key in result) {
+                if (result.hasOwnProperty(key)) {
+                    const row = document.createElement('tr');
+                    
+                    row.classList.add('result-row-animate'); 
+                    const animationDelay = (slideInDuration + delay).toFixed(2) + 's';
+                    row.style.animationDelay = animationDelay;
+                    delay += stagger;
+
+                    let value = typeof result[key] === 'number' ? result[key].toFixed(2) : result[key];
+                    if (key.includes('RM') || key.includes('Charge') || key.includes('Subtotal') || key.includes('Rebate') || key.includes('Service Tax') || key.includes('KWTBB')) {
+                        value = `RM ${value}`;
+                    } else if (key.includes('Usage (kWh)')) {
+                        value = `${value} kWh`;
+                    } else if (key.includes('Demand (kW)')) {
+                        value = `${value} kW`;
+                    } else if (key.includes('percent')) {
+                        value = `${value}%`;
+                    }
+
+                    row.innerHTML = `
+                        <th class="font-bold text-gray-700">${key}</th>
+                        <td class="text-gray-900">${value}</td>
+                    `;
+                    resultsBody.appendChild(row);
+                }
+            }
+        }
+
+        // --- Event Listeners (Modified for custom events) ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialTabId = 'content-calculate';
+            const initialTariffType = 'domestic';
+            const initialCategory = 'general';
+            updateCategoryOptions(initialTabId, initialTariffType);
+            updateFormVisibility(initialTabId, initialTariffType, initialCategory);
+
+            // Close modal on escape key press
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !alertModal.classList.contains('hidden')) {
+                    alertModal.classList.add('hidden');
+                }
+            });
+        });
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                tabPanes.forEach(pane => pane.classList.add('hidden'));
+                const tabId = button.id.replace('tab-', 'content-');
+                document.getElementById(tabId).classList.remove('hidden');
+
+                const currentTariffTypeSelect = tabId === 'content-calculate' ? calcTariffTypeSelect : estTariffTypeSelect;
+                const currentCategorySelect = tabId === 'content-calculate' ? calcTariffCategorySelect : estTariffCategorySelect;
+
+                updateCategoryOptions(tabId, currentTariffTypeSelect.value);
+                const newCategory = currentCategorySelect.value || 'general'; 
+                currentCategorySelect.value = newCategory;
+
+                updateFormVisibility(tabId, currentTariffTypeSelect.value, newCategory);
+            });
+        });
+
+        // Tariff Type select listeners
+        calcTariffTypeSelect.addEventListener('change', (e) => {
+            const currentTabId = 'content-calculate';
+            updateCategoryOptions(currentTabId, e.target.value);
+            calcTariffCategorySelect.value = calcTariffCategorySelect.options[0].value;
+            updateFormVisibility(currentTabId, e.target.value, calcTariffCategorySelect.value);
+        });
+        estTariffTypeSelect.addEventListener('change', (e) => {
+            const currentTabId = 'content-estimate';
+            updateCategoryOptions(currentTabId, e.target.value);
+            estTariffCategorySelect.value = estTariffCategorySelect.options[0].value;
+            updateFormVisibility(currentTabId, e.target.value, estTariffCategorySelect.value);
+        });
+
+        // Tariff Category select listeners
+        calcTariffCategorySelect.addEventListener('change', (e) => {
+            const currentTabId = 'content-calculate';
+            updateFormVisibility(currentTabId, calcTariffTypeSelect.value, e.target.value);
+        });
+        estTariffCategorySelect.addEventListener('change', (e) => {
+            const currentTabId = 'content-estimate';
+            updateFormVisibility(currentTabId, estTariffTypeSelect.value, e.target.value);
+        });
+
+        // Listeners for slider value updates
+        const domTouCalcPeakSlider = document.getElementById('dom-tou-calc-peak');
+        const domTouEstPeakSlider = document.getElementById('dom-tou-est-peak');
+        const ndCalcPeakSlider = document.getElementById('nd-calc-peak');
+        const ndEstPeakSlider = document.getElementById('nd-est-peak');
+
+        if (domTouCalcPeakSlider) domTouCalcPeakSlider.addEventListener('input', (e) => { domTouCalcPeakValue.innerText = `${e.target.value}%`; });
+        if (domTouEstPeakSlider) domTouEstPeakSlider.addEventListener('input', (e) => { domTouEstPeakValue.innerText = `${e.target.value}%`; });
+        if (ndCalcPeakSlider) ndCalcPeakSlider.addEventListener('input', (e) => { ndCalcPeakValue.innerText = `${e.target.value}%`; });
+        if (ndEstPeakSlider) ndEstPeakSlider.addEventListener('input', (e) => { ndEstPeakValue.innerText = `${e.target.value}%`; });
+
+        // --- Core Calculation Logic (Attached to custom event listeners) ---
+
+        // Domestic General Calculate
+        document.getElementById('dom-gen-calc-button').addEventListener('calculate_dom_gen', () => {
+            const totalUsage = parseFloat(document.getElementById('dom-gen-calc-usage').value);
+            const afa = parseFloat(document.getElementById('dom-gen-calc-afa').value);
+            if (!totalUsage || totalUsage <= 0) {
+                showAlert("Please enter a valid total usage (kWh).");
+                return;
+            }
+            const result = calculate_bill_from_usage_domestic_general(totalUsage, afa);
+            showResults(result);
+            if (!result.error) {
+                showToast(`Your Total Bill is RM ${result['Total Bill (RM)'].toFixed(2)}`);
+            }
+        });
+
+        // Domestic General Estimate
+        document.getElementById('dom-gen-est-button').addEventListener('calculate_dom_gen_est', () => {
+            const totalBill = parseFloat(document.getElementById('dom-gen-est-bill').value);
+            const afa = parseFloat(document.getElementById('dom-gen-est-afa').value);
+            if (!totalBill || totalBill <= 0) {
+                showAlert("Please enter a valid total bill amount (RM).");
+                return;
+            }
+            const result = reverse_tnb_domestic_general_bill(totalBill, afa);
+            showResults(result);
+            if (!result.error) {
+                showToast(`Estimated Usage: ${result['Estimated Total Usage (kWh)'].toFixed(2)} kWh`);
+            } else {
+                showToast(`Best Guess Usage: ${result['Estimated Total Usage (kWh)'].toFixed(2)} kWh`);
+            }
+        });
+
+        // Domestic TOU Calculate
+        document.getElementById('dom-tou-calc-button').addEventListener('calculate_dom_tou', () => {
+            const totalUsage = parseFloat(document.getElementById('dom-tou-calc-usage').value);
+            const afa = parseFloat(document.getElementById('dom-tou-calc-afa').value);
+            const peakPercent = parseFloat(document.getElementById('dom-tou-calc-peak').value);
+            if (!totalUsage || totalUsage <= 0) {
+                showAlert("Please enter a valid total usage (kWh).");
+                return;
+            }
+            const result = calculate_bill_from_usage_domestic_tou(totalUsage, peakPercent, afa);
+            showResults(result);
+            if (!result.error) {
+                showToast(`Your Total Bill is RM ${result['Total Bill (RM)'].toFixed(2)}`);
+            }
+        });
+
+        // Domestic TOU Estimate
+        document.getElementById('dom-tou-est-button').addEventListener('calculate_dom_tou_est', () => {
+            const totalBill = parseFloat(document.getElementById('dom-tou-est-bill').value);
+            const afa = parseFloat(document.getElementById('dom-tou-est-afa').value);
+            const peakPercent = parseFloat(document.getElementById('dom-tou-est-peak').value);
+            if (!totalBill || totalBill <= 0) {
+                showAlert("Please enter a valid total bill amount (RM).");
+                return;
+            }
+            const result = reverse_tnb_domestic_tou_bill(totalBill, peakPercent, afa);
+            showResults(result);
+            if (!result.error) {
+                showToast(`Estimated Usage: ${result['Estimated Total Usage (kWh)'].toFixed(2)} kWh`);
+            } else {
+                showToast(`Best Guess Usage: ${result['Estimated Total Usage (kWh)'].toFixed(2)} kWh`);
+            }
+        });
+
+        // Non-Domestic Calculate
+        document.getElementById('nd-calc-button').addEventListener('calculate_nd_calc', () => {
+            const tariffCategory = calcTariffCategorySelect.value;
+            const totalUsage = parseFloat(document.getElementById('nd-calc-usage').value);
+            const afa = parseFloat(document.getElementById('nd-calc-afa').value);
+            const maxDemand = document.getElementById('nd-calc-demand').value ? parseFloat(document.getElementById('nd-calc-demand').value) : 0;
+            const peakPercent = parseFloat(document.getElementById('nd-calc-peak').value);
+
+            if (!totalUsage || totalUsage <= 0) {
+                showAlert("Please enter a valid total usage (kWh).");
+                return;
+            }
+
+            let result;
+            if (tariffCategory.includes('TOU')) {
+                result = calculate_bill_from_usage_nd_tou(tariffCategory, totalUsage, maxDemand, peakPercent, afa);
+            } else {
+                result = calculate_bill_from_usage_nd_general(tariffCategory, totalUsage, maxDemand, afa);
+            }
+            showResults(result);
+            if (!result.error) {
+                showToast(`Your Total Bill is RM ${result['Total Bill (RM)'].toFixed(2)}`);
+            }
+        });
+
+        // Non-Domestic Estimate
+        document.getElementById('nd-est-button').addEventListener('calculate_nd_est', () => {
+            const tariffCategory = estTariffCategorySelect.value;
+            const totalBill = parseFloat(document.getElementById('nd-est-bill').value);
+            const afa = parseFloat(document.getElementById('nd-est-afa').value);
+            const maxDemand = document.getElementById('nd-est-demand').value ? parseFloat(document.getElementById('nd-est-demand').value) : 0;
+            const peakPercent = parseFloat(document.getElementById('nd-est-peak').value);
+
+            if (!totalBill || totalBill <= 0) {
+                showAlert("Please enter a valid total bill amount (RM).");
+                return;
+            }
+
+            const result = reverse_tnb_nd_bill(tariffCategory, totalBill, maxDemand, peakPercent, afa);
+            showResults(result);
+            if (!result.error) {
+                showToast(`Estimated Usage: ${result['Estimated Total Usage (kWh)'].toFixed(2)} kWh`);
+            } else {
+                showToast(`Best Guess Usage: ${result['Estimated Total Usage (kWh)'].toFixed(2)} kWh`);
+            }
+        });
+
+        document.getElementById('alert-close-btn').addEventListener('click', () => {
+            alertModal.classList.add('hidden');
+        });
+
+        // Re-wire form submission to use the processCalculation wrapper
+        document.querySelectorAll('form.form-pane').forEach(form => {
+            form.onsubmit = function(event) {
+                event.preventDefault();
+                const buttonId = form.querySelector('button').id;
+                triggerCalculation(buttonId); // Calls the wrapper function
+            };
+        });
+
+    </script>
+</body>
+
+</html>
