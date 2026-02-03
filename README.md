@@ -1,4 +1,4 @@
-This is just a simple Reverse Function for the currentlt TNB Bill calculator for the Domestic
+This is a Reverse Function for the currentlt TNB Bill calculator for the Domestic
 
 In this Project has focus on providing four function as below which is :
 
