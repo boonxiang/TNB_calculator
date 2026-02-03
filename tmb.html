@@ -22,8 +22,12 @@
             text-align: left;
         }
 
+        
+
         .results-table th {
             background-color: #e5e7eb;
+            
+            
         }
 
         .results-table tr:nth-child(even) {
@@ -251,6 +255,7 @@
                         class="form-pane bg-purple-50 p-6 rounded-lg border border-purple-200 hidden"
                         onsubmit="event.preventDefault(); triggerCalculation('nd-calc-button');">
                         <h3 class="text-xl font-bold mb-4 text-purple-800">Non-Domestic</h3>
+                        
                         <div class="mb-4">
                             <label for="nd-calc-usage" class="block text-gray-700 font-medium mb-1">Total Usage
                                 (kWh)</label>
@@ -626,13 +631,13 @@
 
                 if (triggerNumbers.includes(roll)) {
                     const coffeeHtml = `
-                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Random Break (Roll: ${roll})</h3>
-                        <p class="text-lg text-red-600 mb-4 font-semibold">I am tired, rest a well then calculate for you.</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-4">Random Break</h3>
+                        <p class="text-lg text-red-600 mb-4 font-semibold">I tired already, rest a well then calculate for you.</p>
                         <div class="text-5xl my-4">☕😴</div>
-                        <p class="text-sm text-gray-500">Resuming calculation in 4 seconds...</p>
+                        <p class="text-sm text-gray-500">Resuming calculation in 5 seconds...</p>
                     `;
                     
-                    showEventModal(coffeeHtml, 4000, nextStep); // 4 second break
+                    showEventModal(coffeeHtml, 5000, nextStep); // 5 second break
                     calculationCount = 0; // Reset counter after successful roll
                     return true;
                 } else {
@@ -653,8 +658,8 @@
             // Check for the minute 30. We use a small window (30:00 to 30:09) to make it strict.
             if (minutes === 30 && now.getSeconds() < 10) { 
                 const timeBombHtml = `
-                    <h3 class="text-2xl font-bold text-red-600 mb-4">💣 Time Bomb Alert!</h3>
-                    <p class="text-lg text-gray-700 mb-4">It's ${now.toLocaleTimeString()}! Calculating is forbidden right now.</p>
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">💣 Time Alert!</h3>
+                    <p class="text-lg text-gray-700 mb-4">It's ${now.toLocaleTimeString()}! Calculating is forbidden right now.Rest first, Later calculate for you. </p>
                     <div class="text-5xl my-4">⏱️</div>
                     <p class="text-sm text-gray-500">Calculation will proceed in 10 seconds...</p>
                 `;
@@ -694,6 +699,7 @@
                 }
             };
 
+            
             // Priority 1: Time Bomb Check 
             if (checkTimeBomb(actualCalculation)) {
                 return;
