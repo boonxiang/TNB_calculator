@@ -15,5 +15,5 @@ In this Project has focus on providing four function as below which is :
 
 
 Can visit also :
-https://tnbcalculator-bxyouqzan0.streamlit.app/
+https://boonxiang.github.io/TNB_calculator/
 
