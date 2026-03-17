@@ -34,6 +34,6 @@ To add a touch of personality and mimic real-world system constraints, I scripte
 * **Time Bomb**: Access to calculations is restricted during specific time windows (e.g., at the 30-minute mark) to simulate "maintenance" or rest periods.
 
 ## Link of the result
-You can have a click on the link to see how it look like: https://boonxiang.github.io/TNB_calculator/
+You can click on the link to see how it look like: https://boonxiang.github.io/TNB_calculator/
 
 *Developed by Boon Xiang*
